@@ -22,7 +22,8 @@ def pytype(*type_args,**type_kwargs):
         types_.update(type_kwargs)
         def wrapped_func(*args,**kwargs):
             def any_type_in(possible_types,target_type):
-                return any(t in target_type.__mro__ for t in possible_types)
+                return any(t == tt for t in possible_types 
+                                    for tt in target_type.__mro__)
             nonlocal types_
             nonlocal varnames
             nonlocal func
@@ -48,6 +49,19 @@ if __name__ == "__main__":
         print("Inheritance is now checked")
         return True
     inheritance_check(B(),A())
+
+    class HasAttr:
+        def __init__(self,attr):
+            self.attr = attr
+        def __eq__(self,other):
+            return self.attr in dir(other)
+
+    @pytype(HasAttr("__iter__"),int)
+    def window(iterable,size):
+        return list(zip(*([iter(iterable)]*size)))
+
+    print(window(range(14),5))
+    # window(1,2) -- raises exception
 
     @pytype(int,int)
     def add(a,b):
