@@ -21,6 +21,8 @@ def pytype(*type_args,**type_kwargs):
         types_ = dict(zip(varnames,type_args))
         types_.update(type_kwargs)
         def wrapped_func(*args,**kwargs):
+            def any_type_in(possible_types,target_type):
+                return any(t in target_type.__mro__ for t in possible_types)
             nonlocal types_
             nonlocal varnames
             nonlocal func
@@ -29,13 +31,24 @@ def pytype(*type_args,**type_kwargs):
             values.update(kwargs)
             # All argument values must match up to the possible types given
             for name,value in values.items():
-                assert type(value) in types_[name],"{} must be one of types {} it actually is {}!".format(name,types_[name],type(value))
+                assert any_type_in(types_[name],type(value)),"{} must be one of types {} it actually is {}!".format(name,types_[name],type(value))
             result = func(*args,**kwargs)
             return result 
         return wrapped_func
     return _pytype
 
 if __name__ == "__main__":
+    class A:
+        pass
+    class B(A):
+        pass
+
+    @pytype(A,A)
+    def inheritance_check(a,b):
+        print("Inheritance is now checked")
+        return True
+    inheritance_check(B(),A())
+
     @pytype(int,int)
     def add(a,b):
         return a + b
