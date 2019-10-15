@@ -1,46 +1,25 @@
-def pytype(*type_args,**type_kwargs):
-    """
-    Check a function's arguments for expected types
-    """
-    # Determine if the given type is an iterable
-    def is_iter(type_):
-        return "__iter__" in dir(type_)
-    # Convert any non iterable arguments to lists of element one for consistency
-    type_args = [arg if is_iter(arg) else [arg] for arg in type_args]
-    # Do the same for keyword args
-    new_kwargs = {}
-    for name,type_set in type_kwargs.items():
-        new_kwargs[name] = type_set if is_iter(type_set) else [type_set]
-    type_kwargs = new_kwargs
+from inspect import signature
 
-    def _pytype(func):
-        nonlocal type_args
-        nonlocal type_kwargs
-        # Create a dict of varname to possible types
-        varnames = func.__code__.co_varnames
-        types_ = dict(zip(varnames,type_args))
-        types_.update(type_kwargs)
-        def wrapped_func(*args,**kwargs):
-            nonlocal types_
-            nonlocal varnames
-            nonlocal func
-            # Are any of the possible types in the target type's inheritance?
-            def any_type_in(possible_types,target_type):
-                return any(poss == target for poss in possible_types
-                                    for target in target_type.__mro__ if target != object)
-            # Create a dict of varname to given value
-            values = dict(zip(varnames,args))
-            values.update(kwargs)
-            # All argument values must match up to the possible types given
-            for name,value in values.items():
-                possible_types = types_[name]
-                value_type = type(value)
-                if not any_type_in(possible_types,value_type):
-                    raise TypeError("Argument {}('{}') does not match any of {}!".format(
-                                name, value_type, list(possible_types)))
-            result = func(*args,**kwargs)
-            return result
-        return wrapped_func
+def pytype(f):
+    # Create a dict of varname to possible types
+    f_signature = signature(f)
+    def _pytype(*args,**kwargs):
+        nonlocal f
+        nonlocal f_signature
+        # Are any of the possible types in the target type's inheritance?
+        def any_type_in(input_type, target_type):
+            return any(target_type == t for t in input_type.mro()[:-1])
+        def value_annotation(bound_arguments, signature):
+            return ((parameter.name, bound_arguments.arguments[parameter.name], parameter.annotation) for parameter in signature.parameters.values())
+        # Create a dict of varname to given value
+        bound_arguments = f_signature.bind(*args, **kwargs)
+        for name, value, annotation in value_annotation(bound_arguments, f_signature):
+            if not any_type_in(type(value), annotation):
+                raise TypeError("Argument {}('{}') does not match any of {}!".format(
+                            name, annotation, list(type(value).mro()[:-1])))
+        result = f(*args,**kwargs)
+        return result
+
     return _pytype
 
 class HasAttr:

@@ -16,34 +16,34 @@ class TestPytype(unittest.TestCase):
         class B(A):
             pass
 
-        @pytype(A,A)
-        def inheritance_check(a,b):
+        @pytype
+        def inheritance_check(a: A,b: A):
             return True
         self.assertNotRaises(TypeError, inheritance_check, B(), A())
 
     def test_has_attr(self):
-        @pytype(HasAttr("__iter__"),int)
-        def window(iterable,size):
+        @pytype
+        def window(iterable: HasAttr('__iter__'), size: int):
             return list(zip(*([iter(iterable)]*size)))
         self.assertNotRaises(TypeError, window, [1,2], 1)
         self.assertRaises(TypeError, window, 5, 4)
 
     def test_not_none_raises_error(self):
-        @pytype(NotNone())
-        def id(thing):
+        @pytype
+        def id(thing: NotNone()):
             return thing
         self.assertRaises(TypeError, id, None)
 
     def test_not_none(self):
-        @pytype(NotNone())
-        def id(thing):
+        @pytype
+        def id(thing: NotNone()):
             return thing
         self.assertRaises(TypeError, id, None)
         self.assertNotRaises(TypeError, id, 1)
 
     def test_raw_type(self):
-        @pytype(int,int)
-        def add(a,b):
+        @pytype
+        def add(a: int, b: int):
             return a + b
         self.assertNotRaises(TypeError, add, 1, 2)
         self.assertRaises(TypeError, add, 1.0, 2.0)
