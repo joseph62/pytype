@@ -8,7 +8,7 @@ class TestPytype(unittest.TestCase):
             f(*args, **kwargs)
         except exception:
             error = True
-        self.assertFalse(error)
+        assert not error, f'{exception.__name__} was raised by {f.__name__}'
 
     def test_inheritance(self):
         class A:
@@ -39,6 +39,7 @@ class TestPytype(unittest.TestCase):
         def id(thing):
             return thing
         self.assertRaises(TypeError, id, None)
+        self.assertNotRaises(TypeError, id, 1)
 
     def test_raw_type(self):
         @pytype(int,int)
