@@ -1,7 +1,9 @@
 from inspect import signature
+from functools import wraps
 
 def pytype(f):
     f_signature = signature(f)
+    @wraps(f)
     def _pytype(*args,**kwargs):
         nonlocal f
         nonlocal f_signature
