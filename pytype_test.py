@@ -1,5 +1,5 @@
 import unittest
-from pytype import pytype, HasAttr, NotNone
+from pytype import pytype, HasAttr, NotNone, NotZero
 
 class TestPytype(unittest.TestCase):
     def assertNotRaises(self, exception, f, *args, **kwargs):
@@ -40,6 +40,12 @@ class TestPytype(unittest.TestCase):
             return thing
         self.assertRaises(TypeError, id, None)
         self.assertNotRaises(TypeError, id, 1)
+
+    def test_not_zero(self):
+        @pytype
+        def division(x, y: NotZero()):
+            return x / y
+        self.assertRaises(TypeError, division, 1, 0)
 
     def test_raw_type(self):
         @pytype
